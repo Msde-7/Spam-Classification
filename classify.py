@@ -1,6 +1,6 @@
 # IU CSCI-B 455, Fall 2024
 # PRJ2: Spam detection
-# File written by Gabe Shores 
+# File written by Gabe Shores and Daniel Yang
 #
 
 import sys
@@ -13,49 +13,53 @@ from sklearn.metrics import accuracy_score, classification_report
 
 
 """
-Vectorize email/text messages into numeric representations using CountVectorizer.
+Vectorize email into numeric representations using CountVectorizer.
 Args:
-    messages (list): List of email/text messages.
-    vectorizer (CountVectorizer, optional): Existing CountVectorizer for transformation.
+    emails: Emails.
+    vectorizer: Existing CountVectorizer for transformation.
 Returns:
-    sparse_matrix: Transformed text data.
-    CountVectorizer: Fitted or existing CountVectorizer instance.
+    Transformed text data.
+    Fitted or existing CountVectorizer instance.
 """
-def preprocess_data(messages, vectorizer=None):
+def preprocess_data(emails, vectorizer=None):
     if vectorizer is None:
         vectorizer = CountVectorizer()
-        transformed_messages = vectorizer.fit_transform(messages)  # Fits and transforms the input text
+        transformed_emails = vectorizer.fit_transform(emails)
     else:
-        transformed_messages = vectorizer.transform(messages)  # Only transform using existing vectorizer
-
-    return transformed_messages, vectorizer
+        transformed_emails = vectorizer.transform(emails)
+    return transformed_emails, vectorizer
 
 """
-Train a classifier based on the specified type (SVM or Decision Tree).
+Train a classifier, svm or dt.
 Args:
-    model_type (str): Type of classifier ('svm' or 'dt').
-    X_train (sparse_matrix): Training feature matrix.
-    y_train (array): Training labels.
+    model_type: Type of classifier ('svm' or 'dt').
+    X_train: Training feature matrix.
+    y_train: Training labels.
 Returns:
-    classifier: Trained classifier.
+    Trained classifier.
 """
 def train_classifier(model_type, X_train, y_train):
     # Added a random state to make it easier to reproduce results
     if model_type == 'svm':
-        classifier = SVC(kernel='linear', random_state=42)
+        classifier = SVC(
+            kernel='linear',
+            C=.1,
+            random_state=20
+        )
     elif model_type == 'dt':
-        classifier = DecisionTreeClassifier(random_state=42)
+        classifier = DecisionTreeClassifier(
+            criterion='entropy',
+            max_depth=20,
+            min_samples_split=2,
+            random_state=20
+        )
     else:
-        raise ValueError("Invalid classifier type. Use 'svm' or 'dt'.")
-    classifier.fit(X_train, y_train)
+        raise ValueError("Invalid classifier type. Use 'svm' or 'dt'!!!")
+    classifier.fit(X_train, y_train)  # Fit the classifier to the training data
     return classifier
 
 """
 Save the predictions to an output file, appending a 'Predicted' column.
-Args:
-    input_file (str): Path to the input file.
-    output_file (str): Path to the output file.
-    predictions (list): Predicted labels.
 """
 def save_predictions(input_file, output_file, predictions):
     data = pd.read_csv(input_file)
@@ -72,7 +76,7 @@ def main():
         print("Usage: python classify.py svm_or_dt train_filename test_filename train_output_filename test_output_filename")
         sys.exit(1)
 
-    # File output/input standard
+    # File input/output paths as specified in file_io_standard.py
     INPUT_DIR = Path('./data').resolve()
     OUTPUT_DIR = Path('./').resolve()
 
@@ -102,18 +106,6 @@ def main():
     # Save predictions to output files
     save_predictions(train_filename, train_output_filename, train_predictions)
     save_predictions(test_filename, test_output_filename, test_predictions)
-
-    # Evaluate the model
-    train_accuracy = accuracy_score(y_train, train_predictions)
-    print(f"Training Accuracy: {train_accuracy:.2f}")
-
-    if 'Category' in test_data.columns:
-        y_test = test_data['Category']
-        test_accuracy = accuracy_score(y_test, test_predictions)
-        print(f"Testing Accuracy: {test_accuracy:.2f}")
-        print("\nClassification Report on Test Data:")
-        print(classification_report(y_test, test_predictions))
-
 
 if __name__ == "__main__":
     main()
