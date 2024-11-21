@@ -1,1 +1,1 @@
-# SVM and DT classifier
+# Uses different classifiers to identify spam
